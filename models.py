@@ -68,27 +68,27 @@ class ConvolutionalVAE(nn.Module):
             nn.ReLU(),
             #nn.MaxPool2d(kernel_size=2)
         )
-        self.mu_fc = nn.Linear(4096, 10)
-        self.logvar_fc = nn.Linear(4096, 10)
+        self.mu_fc = nn.Linear(4096, 128)
+        self.logvar_fc = nn.Linear(4096, 128)
 
-        # self.latent_fc = nn.Linear(10, 8 * 8 * 1024)
-        # self.decoder_layers = nn.Sequential(
-        #     nn.ReLU(),
-        #     nn.ConvTranspose2d(1024, 512, kernel_size=4, stride=2, padding=1),
-        #     nn.ReLU(),
-        #     nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1, output_padding=1),
-        #     nn.ReLU(),
-        #     nn.ConvTranspose2d(256, 3, kernel_size=4, stride=1, padding=2),
-        # )
-        self.latent_fc = nn.Linear(10, 8 * 8 * 64)
+        self.latent_fc = nn.Linear(128, 8 * 8 * 1024)
         self.decoder_layers = nn.Sequential(
             nn.ReLU(),
-            nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1),
+            nn.ConvTranspose2d(1024, 512, kernel_size=4, stride=2, padding=1),
             nn.ReLU(),
-            nn.ConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1, output_padding=1),
+            nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1, output_padding=1),
             nn.ReLU(),
-            nn.ConvTranspose2d(16, 3, kernel_size=4, stride=1, padding=2),
+            nn.ConvTranspose2d(256, 3, kernel_size=4, stride=1, padding=2),
         )
+        # self.latent_fc = nn.Linear(128, 8 * 8 * 64)
+        # self.decoder_layers = nn.Sequential(
+        #     nn.ReLU(),
+        #     nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1),
+        #     nn.ReLU(),
+        #     nn.ConvTranspose2d(32, 16, kernel_size=4, stride=2, padding=1, output_padding=1),
+        #     nn.ReLU(),
+        #     nn.ConvTranspose2d(16, 3, kernel_size=4, stride=1, padding=2),
+        # )
 
     def encode(self, x):
         h1 = self.encoder_layers(x)
@@ -104,7 +104,7 @@ class ConvolutionalVAE(nn.Module):
 
     def decode(self, z):
         h3 = self.latent_fc(z)
-        h3 = self.decoder_layers(h3.view(-1, 64, 8, 8))
+        h3 = self.decoder_layers(h3.view(-1, 1024, 8, 8))
         return torch.sigmoid(h3)
 
     def forward(self, x):

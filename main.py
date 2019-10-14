@@ -30,17 +30,21 @@ torch.manual_seed(args.seed)
 device = torch.device("cuda" if args.cuda else "cpu")
 
 kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
+
+cifar_dataset = datasets.CIFAR10('./data', train=True, download=True,
+                                 transform=transforms.ToTensor())
+
 train_loader = torch.utils.data.DataLoader(
-    datasets.CIFAR10('../data', train=True, download=True,
-                   transform=transforms.ToTensor()),
+    cifar_dataset,
     batch_size=args.batch_size, shuffle=True, **kwargs)
+
 test_loader = torch.utils.data.DataLoader(
-    datasets.CIFAR10('../data', train=False, transform=transforms.ToTensor()),
+    cifar_dataset,
     batch_size=args.batch_size, shuffle=True, **kwargs)
 
 
 model = ConvolutionalVAE().to(device)
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
 
 # Reconstruction + KL divergence losses summed over all elements and batch
@@ -61,9 +65,13 @@ def loss_function(recon_x, x, mu, logvar):
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
     return BCE + KLD
 
+
 def train(epoch):
     model.train()
     train_loss = 0
+
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', patience=1)
+
     for batch_idx, (data, _) in enumerate(train_loader):
         data = data.to(device)
         optimizer.zero_grad()
@@ -72,13 +80,16 @@ def train(epoch):
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
+        # mse_loss = nn.MSELoss(reduction='mean')
+        # mse_loss_ = mse_loss(recon_batch, data.view(-1, 3072))
+        # scheduler.step(mse_loss_)
         if batch_idx % args.log_interval == 0:
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader),
                 loss.item() / len(data)))
             with torch.no_grad():
-                sample_ = torch.randn(64, 10).to(device)
+                sample_ = torch.randn(64, 128).to(device)
                 sample_ = model.decode(sample_).cpu()
                 save_image(sample_.view(64, 3, 32, 32),
                            'intermediates/sample_' + timestring + str(batch_idx) + '.png')
@@ -113,7 +124,7 @@ if __name__ == "__main__":
         train(epoch)
         test(epoch)
         with torch.no_grad():
-            sample = torch.randn(64, 10).to(device)
+            sample = torch.randn(64, 128).to(device)
             sample = model.decode(sample).cpu()
             save_image(sample.view(64, 3, 32, 32),
                        'results_c/sample_' + timestring + str(epoch) + '.png')
