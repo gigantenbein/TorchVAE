@@ -57,19 +57,19 @@ class ConvolutionalVAE(nn.Module):
 
         self.encoder_layers = nn.Sequential(
             nn.Conv2d(3, 128, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(128),
             nn.ReLU(),
             #nn.MaxPool2d(kernel_size=2),
             nn.Conv2d(128, 256, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             #nn.MaxPool2d(kernel_size=2),
             nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(512),
             nn.ReLU(),
             #nn.MaxPool2d(kernel_size=2),
             nn.Conv2d(512, 1024, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(1024),
             nn.ReLU(),
             #nn.MaxPool2d(kernel_size=2)
         )
@@ -78,13 +78,13 @@ class ConvolutionalVAE(nn.Module):
 
         self.latent_fc = nn.Linear(128, 8 * 8 * 1024)
         self.decoder_layers = nn.Sequential(
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(1024),
             nn.ReLU(),
             nn.ConvTranspose2d(1024, 512, kernel_size=4, stride=2, padding=1),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(512),
             nn.ReLU(),
             nn.ConvTranspose2d(512, 256, kernel_size=4, stride=2, padding=1, output_padding=1),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.ConvTranspose2d(256, 3, kernel_size=4, stride=1, padding=2),
         )
