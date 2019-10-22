@@ -6,7 +6,6 @@ from torch import nn, optim
 from torch.nn import functional as F
 from torchvision import datasets, transforms
 from torchvision.utils import save_image
-from memory_profiler import profile
 
 from models import VAE, ConvolutionalVAE
 
@@ -22,6 +21,10 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
 parser.add_argument('--log-interval', type=int, default=10, metavar='N',
                     help='how many batches to wait before logging training status')
+parser.add_argument('--recon_loss', type=str, default='BCE', metavar='loss_type',
+                    help='should the reconstruction loss be BCE or MSE')
+
+
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
 
