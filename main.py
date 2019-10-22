@@ -86,11 +86,6 @@ def train(epoch):
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader),
                 loss.item() / len(data)))
-            with torch.no_grad():
-                sample_ = torch.randn(64, 128).to(device)
-                sample_ = model.decode(sample_).cpu()
-                save_image(sample_.view(64, 3, 32, 32),
-                           'intermediates/sample_' + timestring + str(batch_idx) + '.png')
 
     print('====> Epoch: {} Average loss: {:.4f}'.format(
           epoch, train_loss / len(train_loader.dataset)))
