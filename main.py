@@ -31,7 +31,7 @@ device = torch.device("cuda" if args.cuda else "cpu")
 
 kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
 
-cifar_dataset = datasets.CIFAR10('./data', train=True, download=True,
+cifar_dataset = datasets.CIFAR10('./data', train=True, download=False,
                                  transform=transforms.ToTensor())
 
 train_loader = torch.utils.data.DataLoader(
@@ -48,22 +48,20 @@ optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
 
 # Reconstruction + KL divergence losses summed over all elements and batch
-def loss_function(recon_x, x, mu, logvar):
+def loss_function(recon_x, x, mu, logvar, recon_type='BCE'):
 
     BCE = F.binary_cross_entropy(recon_x, x.view(-1, 3072), reduction='sum')
-
-   # CE = F.cross_entropy(recon_x)
-
-    #loss = nn.MSELoss(reduction='mean')
-
-    #BCE = loss(recon_x.view(-1, 3, 32, 32), x)
-
+    MSE = F.mse_loss(recon_x, x.view(-1, 3072), reduction='sum')
     # see Appendix B from VAE paper:
     # Kingma and Welling. Auto-Encoding Variational Bayes. ICLR, 2014
     # https://arxiv.org/abs/1312.6114
     # 0.5 * sum(1 + log(sigma^2) - mu^2 - sigma^2)
     KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-    return BCE + KLD
+
+    if recon_type == 'BCE':
+        return BCE + KLD
+    else:
+        return MSE + KLD
 
 
 def train(epoch):
@@ -76,7 +74,7 @@ def train(epoch):
         data = data.to(device)
         optimizer.zero_grad()
         recon_batch, mu, logvar = model(data)
-        loss = loss_function(recon_batch, data, mu, logvar)
+        loss = loss_function(recon_batch, data, mu, logvar, recon_type='MSE')
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -105,7 +103,7 @@ def test(epoch):
         for i, (data, _) in enumerate(test_loader):
             data = data.to(device)
             recon_batch, mu, logvar = model(data)
-            test_loss += loss_function(recon_batch, data, mu, logvar).item()
+            test_loss += loss_function(recon_batch, data, mu, logvar, recon_type='MSE').item()
             if i == 0:
                 n = min(data.size(0), 8)
                 comparison = torch.cat([data[:n],
